@@ -14,14 +14,18 @@ def check_auth(req):
     return req.headers.get("x-api-key") == API_KEY
 
 
-@app.route("/health", methods=["GET"])
+@app.route("/", methods=["GET", "HEAD"])
+def index():
+    return jsonify({"status": "ok", "message": "PDF Reader API"})
+
+
+@app.route("/health", methods=["GET", "HEAD"])
 def health():
     return jsonify({"status": "ok", "version": "1.0.0"})
 
 
 @app.route("/extract", methods=["POST"])
 def extract_from_upload():
-    """Recebe um PDF via multipart/form-data e retorna o texto de cada página."""
     if not check_auth(request):
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -50,7 +54,6 @@ def extract_from_upload():
 
 @app.route("/extract-url", methods=["POST"])
 def extract_from_url():
-    """Recebe uma URL pública de PDF e retorna o texto de cada página."""
     if not check_auth(request):
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -59,7 +62,7 @@ def extract_from_url():
         return jsonify({"error": "Informe o campo 'url' no body JSON."}), 400
 
     url = body["url"]
-    page_number = body.get("page")  # opcional: retornar só uma página
+    page_number = body.get("page")
 
     try:
         resp = requests.get(url, timeout=30)
@@ -77,7 +80,7 @@ def extract_from_url():
         if page_number is not None:
             match = [p for p in pages if p["page"] == page_number]
             if not match:
-                return jsonify({"error": f"Página {page_number} não encontrada."}), 404
+                return jsonify({"error": f"Pagina {page_number} nao encontrada."}), 404
             return jsonify({
                 "url": url,
                 "total_pages": len(pages),
