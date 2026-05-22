@@ -3,6 +3,7 @@ import fitz  # PyMuPDF
 import requests
 import io
 import os
+import base64
 
 app = Flask(__name__)
 
@@ -21,7 +22,7 @@ def index():
 
 @app.route("/health", methods=["GET", "HEAD"])
 def health():
-    return jsonify({"status": "ok", "version": "1.0.0"})
+    return jsonify({"status": "ok", "version": "1.1.0"})
 
 
 @app.route("/extract", methods=["POST"])
@@ -45,6 +46,45 @@ def extract_from_upload():
         doc.close()
         return jsonify({
             "filename": file.filename,
+            "total_pages": len(pages),
+            "pages": pages
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/extract-base64", methods=["POST"])
+def extract_from_base64():
+    if not check_auth(request):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    body = request.get_json()
+    if not body or not body.get("base64"):
+        return jsonify({"error": "Informe o campo 'base64' no body JSON."}), 400
+
+    page_number = body.get("page")
+
+    try:
+        pdf_bytes = base64.b64decode(body["base64"] + "==")
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        pages = []
+        for i, page in enumerate(doc):
+            pages.append({
+                "page": i + 1,
+                "text": page.get_text().strip()
+            })
+        doc.close()
+
+        if page_number is not None:
+            match = [p for p in pages if p["page"] == page_number]
+            if not match:
+                return jsonify({"error": f"Pagina {page_number} nao encontrada."}), 404
+            return jsonify({
+                "total_pages": len(pages),
+                "page": match[0]
+            })
+
+        return jsonify({
             "total_pages": len(pages),
             "pages": pages
         })
