@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 import fitz  # PyMuPDF
 import requests
-import io
 import os
 import base64
 
@@ -17,12 +16,12 @@ def check_auth(req):
 
 @app.route("/", methods=["GET", "HEAD"])
 def index():
-    return jsonify({"status": "ok", "message": "PDF Reader API"})
+    return jsonify({"status": "ok", "message": "PDF Reader API", "version": "1.2.0"})
 
 
 @app.route("/health", methods=["GET", "HEAD"])
 def health():
-    return jsonify({"status": "ok", "version": "1.1.0"})
+    return jsonify({"status": "ok", "version": "1.2.0"})
 
 
 @app.route("/extract", methods=["POST"])
